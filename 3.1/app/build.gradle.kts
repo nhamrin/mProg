@@ -27,13 +27,13 @@ android {
         }
     }
     compileOptions {
-        //Java version 8 to ensure compatibility with CameraX (do I need this?)
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
         jvmTarget = "11"
     }
+    //Use viewBinding
     buildFeatures {
         viewBinding = true
     }

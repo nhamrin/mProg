@@ -20,6 +20,15 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.sqrt
 
+/**
+ * The class MainActivity
+ *
+ * This class starts the program and passes a viewModel to the PrimeNumber function
+ *
+ * The program finds larger and larger prime numbers and displays and saves the current largest
+ * one. When closing and re-opening the application, it will continue where it left of by reading
+ * the current saved prime number from memory.
+ */
 class MainActivity : ComponentActivity() {
     private val viewModel : PrimeView by viewModels()
 
@@ -31,6 +40,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * The function PrimeNumber
+ *
+ * This function is the backbone of the entire program, setting up the structure which the text and
+ * prime number will slot into
+ */
 @Composable
 fun PrimeNumber(viewModel: PrimeView) {
     val largestPrime = viewModel.largestPrime.value
@@ -50,6 +65,12 @@ fun PrimeNumber(viewModel: PrimeView) {
     }
 }
 
+/**
+ * The class PrimeView
+ *
+ * This class gets the current largest prime, computes the next largest prime and saves it to
+ * memory
+ */
 class PrimeView(application: Application) : AndroidViewModel(application) {
     private val primeFile: File = File(application.filesDir, "largestPrime.txt")
     private val _largestPrime = mutableStateOf(2L)
@@ -57,12 +78,20 @@ class PrimeView(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            val savedPrime = primeFile.takeIf { it.exists() }?.readText()?.toLongOrNull() ?: 2L
+            val savedPrime = primeFile.takeIf { it.exists() }?.readText()?.toLongOrNull() ?: 2L //If the file isn't empty, get the saved prime number
             _largestPrime.value = savedPrime
-            findPrimes(savedPrime)
+            findPrimes(savedPrime) //Pass the saved prime number into the prime finding algorithm
         }
     }
 
+    /**
+     * The function findPrimes
+     *
+     * This function calls the prime finding function and increments to the number it should check
+     * next
+     *
+     * @param start the current saved prime
+     */
     private suspend fun findPrimes(start: Long) {
         var current = start
         withContext(Dispatchers.Default) {
@@ -78,10 +107,24 @@ class PrimeView(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * The function savePrime
+     *
+     * This function saves the current prime number to memory
+     *
+     * @param prime the current prime number
+     */
     private fun savePrime(prime: Long) {
         primeFile.writeText(prime.toString())
     }
 
+    /**
+     * The function isPrime
+     *
+     * This function calculates if a number is prime or not
+     *
+     * @param num the number to be checked
+     */
     private fun isPrime(num: Long): Boolean {
         if (num < 2) {
             return false

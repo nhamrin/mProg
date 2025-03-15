@@ -24,6 +24,15 @@ import androidx.camera.core.ImageCaptureException
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/**
+ * The class MainActivity
+ *
+ * This class starts the program, creates a new view binding and sets up permissions and buttons
+ *
+ * The program is more or less a camera application that can take pictures using the device's
+ * back camera and saves them to the internal storage. It also adds a way to view these pictures
+ * from inside the app.
+ */
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
 
@@ -36,21 +45,27 @@ class MainActivity : AppCompatActivity() {
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
 
-        // Request camera permissions
+        //Request camera permissions
         if (allPermissionsGranted()) {
             startCamera()
         } else {
             requestPermissions()
         }
 
-        // Set up the listeners for take photo and video capture buttons
+        //Set up the listeners for gallery and photo capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
         viewBinding.galleryButton.setOnClickListener { viewPhoto() }
-
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
+    /**
+     * The function viewPhoto
+     *
+     * This function uses an intent to open a specific folder using a already installed application
+     * of the user's choice. For instance Google Photos or the device manufacture's pre-installed
+     * gallery viewer.
+     */
     private fun viewPhoto() {
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
@@ -59,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         val selection = "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
-        val selectionArgs = arrayOf("Pictures/CameraApp-Images/")
+        val selectionArgs = arrayOf("Pictures/CameraApp-Images/") //Change this if you change the save location in takePhoto
 
         val cursor = contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -89,11 +104,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * The function takePhoto
+     *
+     * This function takes a photo using the device's camera and saves them to memory. It creates
+     * metadata for these pictures and will give feedback to the user whether or not the picture
+     * was successfully taken.
+     */
     private fun takePhoto() {
-        // Get a stable reference of the modifiable image capture use case
         val imageCapture = imageCapture ?: return
 
-        // Create time stamped name and MediaStore entry.
+        //Create time stamped name and MediaStore entry.
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
             .format(System.currentTimeMillis())
         val contentValues = ContentValues().apply {
@@ -104,7 +125,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Create output options object which contains file + metadata
+        //Create output options object which contains file + metadata
         val outputOptions = ImageCapture.OutputFileOptions
             .Builder(
                 contentResolver,
@@ -113,8 +134,7 @@ class MainActivity : AppCompatActivity() {
             )
             .build()
 
-        // Set up image capture listener, which is triggered after photo has
-        // been taken
+        //Set up image capture listener, which is triggered after photo has been taken
         imageCapture.takePicture(
             outputOptions,
             ContextCompat.getMainExecutor(this),
@@ -133,14 +153,18 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * The function startCamera
+     *
+     * This function starts the camera and binds it to the view
+     */
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
-            // Used to bind the lifecycle of cameras to the lifecycle owner
+            //Bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
-            // Preview
             val preview = Preview.Builder()
                 .build()
                 .also {
@@ -149,14 +173,12 @@ class MainActivity : AppCompatActivity() {
 
             imageCapture = ImageCapture.Builder().build()
 
-            // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA //Back camera
 
             try {
-                // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
 
-                // Bind use cases to camera
+                //Bind use cases to camera
                 cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageCapture)
 
@@ -167,6 +189,11 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    /**
+     * The function requestPermissions
+     *
+     * This function request all the necessary permissions that the application needs to work
+     */
     private fun requestPermissions() {
         activityResultLauncher.launch(REQUIRED_PERMISSIONS)
     }
@@ -175,7 +202,7 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions())
         { permissions ->
-            // Handle Permission granted/rejected
+            //Handle permissions
             var permissionGranted = true
             permissions.entries.forEach {
                 if (it.key in REQUIRED_PERMISSIONS && !it.value)
@@ -186,10 +213,16 @@ class MainActivity : AppCompatActivity() {
                     "Permission request denied",
                     Toast.LENGTH_SHORT).show()
             } else {
-                startCamera()
+                startCamera() //Will start the camera only if all permissions have been granted
             }
         }
 
+    /**
+     * The function allPermissionsGranted
+     *
+     * This function checks if so that all permissions have been granted and then passes this to
+     * the package manager
+     */
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
             baseContext, it) == PackageManager.PERMISSION_GRANTED

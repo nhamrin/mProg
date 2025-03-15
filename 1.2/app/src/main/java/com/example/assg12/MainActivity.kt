@@ -40,6 +40,14 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.platform.LocalView
 import com.example.assg12.ui.theme.Assg12Theme
 
+/**
+ * The main activity class
+ *
+ * This class starts the program and draws polygon with 6 corners
+ *
+ * This program draws a polygon that morphs to another polygon when clicked on. Press and hold the
+ * polygon to, temporarily, retain its new shape.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +60,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * The morphing class
+ *
+ * This class morphs a polygon between two different set numbers of vertices
+ */
 class MorphPolygonShape(
     private val morph: Morph,
     private val percentage: Float
@@ -71,6 +84,16 @@ class MorphPolygonShape(
     }
 }
 
+/**
+ * The polygon function
+ *
+ * This function draws a polygon of with a specific amount of vertices. Currently, it is set to
+ * remember the polygon with 6 vertices (set in the call in MainActivity) and a polygon with a
+ * random amount (between 3 to 10) of vertices. This random amount is reset everytime the app is
+ * launched.
+ *
+ * @param vert an integer passed from MainActivity that sets the vertices in the base polygon
+ */
 @Composable
 fun Polygon(vert: Int) {
     var vertices = vert
@@ -109,7 +132,7 @@ fun Polygon(vert: Int) {
     val animatedProgress = animateFloatAsState(
         targetValue = if (isPressed) 1f else 0f,
         label = "progress",
-        animationSpec = spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium)
+        animationSpec = spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium) //Change this to modify the transition
     )
 
     val view = LocalView.current
@@ -125,10 +148,10 @@ fun Polygon(vert: Int) {
                 .clip(MorphPolygonShape(morph, animatedProgress.value))
                 .background(Color(0xFFDDFF94))
                 .clickable(interactionSource = interactionSrc, indication = null) {
-                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                    view.playSoundEffect(SoundEffectConstants.CLICK) //This should play a click sound but does not seem to work that well...
                 }
         ) {
-            Text("Click me!",
+            Text("Click me!", //The text on the polygon
                 fontSize = 30.sp,
                 modifier = Modifier.align(Alignment.Center))
         }
