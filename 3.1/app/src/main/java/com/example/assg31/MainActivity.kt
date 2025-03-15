@@ -1,6 +1,7 @@
 package com.example.assg31
 
 import android.Manifest
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -51,11 +52,41 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun viewPhoto() {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            type = "image/*"
-            setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+        val projection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.RELATIVE_PATH
+        )
+
+        val selection = "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
+        val selectionArgs = arrayOf("Pictures/CameraApp-Images/")
+
+        val cursor = contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        )
+
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val idColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val id = it.getLong(idColumn)
+                val contentUri = ContentUris.withAppendedId(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(contentUri, "image/*")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                startActivity(intent)
+            } else {
+                Toast.makeText(this, "No images found in Pictures/CameraApp-Images", Toast.LENGTH_SHORT).show()
+            }
         }
-        startActivity(intent)
     }
 
     private fun takePhoto() {
@@ -69,7 +100,7 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraX-Image")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/CameraApp-Images")
             }
         }
 
@@ -170,7 +201,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val TAG = "CameraXApp"
+        private const val TAG = "MyCameraApp"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
