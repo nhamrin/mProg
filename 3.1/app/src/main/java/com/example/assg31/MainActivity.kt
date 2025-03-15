@@ -2,6 +2,7 @@ package com.example.assg31
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -21,8 +22,6 @@ import android.util.Log
 import androidx.camera.core.ImageCaptureException
 import java.text.SimpleDateFormat
 import java.util.Locale
-
-typealias LumaListener = (luma: Double) -> Unit
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewBinding: ActivityMainBinding
@@ -45,8 +44,18 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the listeners for take photo and video capture buttons
         viewBinding.imageCaptureButton.setOnClickListener { takePhoto() }
+        viewBinding.galleryButton.setOnClickListener { viewPhoto() }
+
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    private fun viewPhoto() {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            type = "image/*"
+            setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+        }
+        startActivity(intent)
     }
 
     private fun takePhoto() {
@@ -165,8 +174,7 @@ class MainActivity : AppCompatActivity() {
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS =
             mutableListOf (
-                Manifest.permission.CAMERA,
-                Manifest.permission.RECORD_AUDIO
+                Manifest.permission.CAMERA
             ).apply {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
