@@ -1,0 +1,8 @@
+<!--Add text to the application's buttons-->
+<resources>
+    <string name="app_name">assg33</string>
+    <string name="record_video">Record Video</string>
+    <string name="gallery">Gallery</string>
+    <string name="start_capture">Start Capture</string>
+    <string name="stop_capture">Stop Capture</string>
+</resources>
