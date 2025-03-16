@@ -1,0 +1,6 @@
+<!--Add text to the application's buttons-->
+<resources>
+    <string name="app_name">assg32</string>
+    <string name="record">Record/stop recording audio</string>
+    <string name="play">Play audio</string>
+</resources>
