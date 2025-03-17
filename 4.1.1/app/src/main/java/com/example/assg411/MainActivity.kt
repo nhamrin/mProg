@@ -16,6 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 
+/**
+ * The class MainActivity
+ *
+ * This class starts the program by calling the YouTubeLauncherApp function
+ *
+ * The program presents the user with five different YouTube links. Once pressed, the app opens the
+ * YouTube app and plays the specified video.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,10 +33,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * The function YouTubeLauncherApp
+ *
+ * This function specifies which videos to showcase and creates the five interactable buttons. Once
+ * pressed, the button passes the context created in this function to the openYouTube function.
+ */
 @Composable
 fun YouTubeLauncherApp() {
     val context = LocalContext.current
 
+    //Choose what videos and in what order
     val videoLinks = listOf(
         "https://www.youtube.com/watch?v=QIvtyzCYJDg",
         "https://www.youtube.com/watch?v=DHfRfU3XUEo",
@@ -44,7 +59,7 @@ fun YouTubeLauncherApp() {
     ) {
         videoLinks.forEachIndexed { index, link ->
             Button(
-                onClick = { openYouTube(context, link) },  //Pass context to function
+                onClick = { openYouTube(context, link) }, //Pass context to function
                 modifier = Modifier.fillMaxWidth().padding(8.dp)
             ) {
                 Text(text = "Play Video ${index + 1}")
@@ -53,13 +68,12 @@ fun YouTubeLauncherApp() {
     }
 }
 
+/**
+ * The function openYouTube
+ *
+ * This function uses a Intent to open the YouTube app and play the requested video
+ */
 fun openYouTube(context: Context, url: String) {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-    context.startActivity(intent)  //Use context to start activity
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewApp() {
-    YouTubeLauncherApp()
+    context.startActivity(intent) //Use context to start activity
 }
