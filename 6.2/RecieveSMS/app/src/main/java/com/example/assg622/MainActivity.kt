@@ -25,6 +25,13 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * The class SmsViewModel
+ *
+ * This class passes a view model that will be used to create the app's user interface. It also
+ * hosts some variables and functions dedicated to adding messages and stating if a permission was
+ * denied or not.
+ */
 class SmsViewModel : ViewModel() {
     private val _smsMessages = mutableStateListOf<String>()
     val smsMessages: List<String> get() = _smsMessages
@@ -43,6 +50,12 @@ class SmsViewModel : ViewModel() {
     }
 }
 
+/**
+ * The class MainActivity
+ *
+ * This class starts the program by calling the SmsReceiverApp function and sets up the application
+ * by creating a view model, requesting permissions and registering a receiver
+ */
 class MainActivity : ComponentActivity() {
     private lateinit var smsViewModel: SmsViewModel
 
@@ -58,6 +71,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * The function requestSmsPermission
+     *
+     * This function request the application's needed permissions
+     */
     private fun requestSmsPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
@@ -69,16 +87,21 @@ class MainActivity : ComponentActivity() {
             smsViewModel.changePermissionDenied(!isGranted)
         }
 
-    private val smsReceiver = object : BroadcastReceiver() {
+    private val smsReceiver = object : BroadcastReceiver() { //Use a broadcast receiver
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
+            if (intent?.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) { //Not 100% like the assignment tip but seems to work
                 val bundle = intent.extras
                 if (bundle != null) {
                     val pdus = bundle.get("pdus") as? Array<*>
                     pdus?.forEach {
-                        val sms = SmsMessage.createFromPdu(it as ByteArray)
-                        val message = "From: ${sms.originatingAddress}\n${sms.messageBody}"
-                        smsViewModel.addSmsMessage(message)
+                        val format = bundle.getString("format")
+                        try {
+                            val sms = SmsMessage.createFromPdu(it as ByteArray, format) //This might help against crashing? "format"
+                            val message = "From: ${sms.originatingAddress}\n${sms.messageBody}"
+                            smsViewModel.addSmsMessage(message)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
                 }
             }
@@ -91,12 +114,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * The function SmsReceiverApp
+ *
+ * This function hosts the front end of the app using a viewModel. It creates a interface for the
+ * received SMSs and also states if the needed permissions have been denied.
+ */
 @Composable
 fun SmsReceiverApp(viewModel: SmsViewModel) {
     MaterialTheme {
         Surface(modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()) {
+            .systemBarsPadding()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Received SMS Messages", style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(16.dp))
