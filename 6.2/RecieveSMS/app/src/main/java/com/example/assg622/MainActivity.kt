@@ -55,6 +55,10 @@ class SmsViewModel : ViewModel() {
  *
  * This class starts the program by calling the SmsReceiverApp function and sets up the application
  * by creating a view model, requesting permissions and registering a receiver
+ *
+ * The program displays incoming SMS messages to the user's device with the limitation that only it
+ * only shows incoming messages from when the application is running and not any previous messages.
+ * As hinted in the assignment tip, this is done with the help of BroadcastReceiver.
  */
 class MainActivity : ComponentActivity() {
     private lateinit var smsViewModel: SmsViewModel
@@ -74,11 +78,13 @@ class MainActivity : ComponentActivity() {
     /**
      * The function requestSmsPermission
      *
-     * This function request the application's needed permissions
+     * This function request the application's needed permissions. NOTE: SEND_SMS is a restricted
+     * permission in (at least) Android 15+, the user needs to allow this permission manually in
+     * the device's settings menu
      */
     private fun requestSmsPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+            requestPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS) //
         }
     }
 
