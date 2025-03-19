@@ -54,9 +54,9 @@ class MainActivity : ComponentActivity() {
 /**
  * The function CallHistoryScreen
  *
- * This function first request permission to access the device's call logs. Once this permission
- * has been accepted, the call history is shown. If not accepted, a text that informs the user to
- * accept permissions is shown.
+ * This function first request the necessary to permissions to access the device's call logs and
+ * the ability to make phone calls. Once these permissions have been accepted, the call history is
+ * shown. If not accepted, a text that informs the user to accept permissions is shown.
  */
 @Composable
 fun CallHistoryScreen() {
@@ -64,30 +64,39 @@ fun CallHistoryScreen() {
     val callLogs = remember { mutableStateListOf<CallLogEntry>() }
     val permissionState = remember { mutableStateOf(false) }
 
+    val permissions = arrayOf(
+        Manifest.permission.READ_CALL_LOG,
+        Manifest.permission.CALL_PHONE
+    )
+
     val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        permissionState.value = isGranted
-        if (isGranted) {
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        val allPermissionsGranted = permissionsMap.values.all { it }
+        permissionState.value = allPermissionsGranted
+        if (allPermissionsGranted) {
             callLogs.clear()
             callLogs.addAll(getCallHistory(context))
         }
     }
 
     LaunchedEffect(Unit) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
+        val allPermissionsGranted = permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+        if (allPermissionsGranted) {
             permissionState.value = true
             callLogs.addAll(getCallHistory(context))
         } else {
-            requestPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+            requestPermissionLauncher.launch(permissions)
         }
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Call History", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier
+            .height(8.dp)
+            .systemBarsPadding())
 
         if (permissionState.value) {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -98,7 +107,7 @@ fun CallHistoryScreen() {
                 }
             }
         } else {
-            Text("Permission required to access call logs.")
+            Text("Permissions required to access call logs.")
         }
     }
 }
