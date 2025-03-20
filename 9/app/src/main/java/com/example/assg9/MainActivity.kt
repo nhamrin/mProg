@@ -52,15 +52,16 @@ class MainActivity : ComponentActivity() {
 fun GPSMapApp() {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    val locationState = remember { mutableStateOf(LatLng(37.7749, -122.4194)) } // Default SF location
+    val locationState = remember { mutableStateOf(LatLng(59.326801791179804, 18.071768430989838)) } //Default location
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(locationState.value, 15f)
+        position = CameraPosition.fromLatLngZoom(locationState.value, 25f)
     }
 
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
     val directionState = remember { mutableStateOf(0f) }
     val lightLevelState = remember { mutableStateOf(0f) }
+    val temperatureState = remember { mutableStateOf<Float?>(null) }
 
     if (locationPermissionState.status.isGranted) {
         LaunchedEffect(Unit) {
@@ -77,6 +78,7 @@ fun GPSMapApp() {
     val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     val magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    val temperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
 
     val sensorEventListener = rememberUpdatedState(object : SensorEventListener {
         val rotationMatrix = FloatArray(9)
@@ -112,17 +114,32 @@ fun GPSMapApp() {
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
     })
 
+    val temperatureSensorEventListener = rememberUpdatedState(object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            if (event != null && event.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+                temperatureState.value = event.values[0]
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    })
+
     LaunchedEffect(Unit) {
         sensorManager.registerListener(sensorEventListener.value, accelerometer, SensorManager.SENSOR_DELAY_UI)
         sensorManager.registerListener(sensorEventListener.value, magneticField, SensorManager.SENSOR_DELAY_UI)
         sensorManager.registerListener(lightSensorEventListener.value, lightSensor, SensorManager.SENSOR_DELAY_UI)
+        if (temperatureSensor != null) {
+            sensorManager.registerListener(temperatureSensorEventListener.value, temperatureSensor, SensorManager.SENSOR_DELAY_UI)
+        }
     }
 
-    //This is probably good to have
-//    onDispose {
-//        sensorManager.unregisterListener(sensorEventListener.value)
-//        sensorManager.unregisterListener(lightSensorEventListener.value)
-//    }
+    DisposableEffect(Unit) {
+        onDispose {
+            sensorManager.unregisterListener(sensorEventListener.value)
+            sensorManager.unregisterListener(lightSensorEventListener.value)
+            sensorManager.unregisterListener(temperatureSensorEventListener.value)
+        }
+    }
 
     // Ensure the camera follows the updated location
     LaunchedEffect(locationState.value) {
@@ -148,7 +165,7 @@ fun GPSMapApp() {
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(16.dp)
-                    .background(Color.White) // Semi-transparent background
+                    .background(Color.White)
                     .fillMaxWidth()
             ) {
                 Text(
@@ -157,12 +174,19 @@ fun GPSMapApp() {
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = "Direction: ${directionState.value}°",
+                    text = "Direction: ${getDirection(directionState.value)}, ${directionState.value.toInt()}°",
                     color = Color.Black,
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
                     text = "Light Level: ${lightLevelState.value} lux",
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = if (temperatureSensor != null)
+                        "Temperature: ${temperatureState.value ?: "Loading..."}°C"
+                    else "Temperature: Sensor Not Available",
                     color = Color.Black,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -183,4 +207,18 @@ fun startLocationUpdates(client: FusedLocationProviderClient, onUpdate: (Locatio
             result.lastLocation?.let { onUpdate(it) }
         }
     }, null)
+}
+
+fun getDirection(azimuth: Float): String {
+    return when {
+        azimuth >= 0 && azimuth < 22.5 -> "North"
+        azimuth >= 22.5 && azimuth < 67.5 -> "North-East"
+        azimuth >= 67.5 && azimuth < 112.5 -> "East"
+        azimuth >= 112.5 && azimuth < 157.5 -> "South-East"
+        azimuth >= 157.5 && azimuth < 202.5 -> "South"
+        azimuth >= 202.5 && azimuth < 247.5 -> "South-West"
+        azimuth >= 247.5 && azimuth < 292.5 -> "West"
+        azimuth >= 292.5 && azimuth < 337.5 -> "North-West"
+        else -> "North"
+    }
 }
