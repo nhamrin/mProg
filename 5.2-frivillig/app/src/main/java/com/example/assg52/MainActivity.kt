@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
                     pitch = Math.toDegrees(orientation[1].toDouble()).toFloat()
                     roll = Math.toDegrees(orientation[2].toDouble()).toFloat()
 
-                    azimuth = (azimuth + 360) % 360 //This doesn't do any difference, right?
+                    azimuth = (azimuth + 360) % 360 //This doesn't do any difference, right? Never mind, I'm stupid... It do do things.
 
                     direction = getDirectionFromAzimuth(azimuth)
                 }
