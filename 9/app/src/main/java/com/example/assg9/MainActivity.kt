@@ -81,23 +81,28 @@ fun GPSMapApp() {
     val temperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
 
     val sensorEventListener = rememberUpdatedState(object : SensorEventListener {
-        val rotationMatrix = FloatArray(9)
-        val orientation = FloatArray(3)
+        val gravity = FloatArray(3)
+        val geomagnetic = FloatArray(3)
 
         override fun onSensorChanged(event: SensorEvent?) {
             if (event == null) return
-            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                // Update accelerometer data
-                System.arraycopy(event.values, 0, rotationMatrix, 0, 3)
-            } else if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-                // Update magnetic field data
-                System.arraycopy(event.values, 0, rotationMatrix, 3, 3)
+            when (event.sensor.type) {
+                Sensor.TYPE_ACCELEROMETER -> {
+                    System.arraycopy(event.values, 0, gravity, 0 ,3)
+                }
+                Sensor.TYPE_MAGNETIC_FIELD -> {
+                    System.arraycopy(event.values, 0, geomagnetic, 0, 3)
+                }
             }
 
-            if (rotationMatrix.size == 9) {
-                // Calculate azimuth (direction)
-                SensorManager.getOrientation(rotationMatrix, orientation)
-                directionState.value = Math.toDegrees(orientation[0].toDouble()).toFloat()
+            if (gravity.isNotEmpty() && geomagnetic.isNotEmpty()) {
+                val rotation = FloatArray(9)
+                val incline = FloatArray(9)
+                if (SensorManager.getRotationMatrix(rotation, incline, gravity, geomagnetic)) {
+                    val orientation = FloatArray(3)
+                    SensorManager.getOrientation(rotation, orientation)
+                    directionState.value = Math.toDegrees(orientation[0].toDouble()).toFloat()
+                }
             }
         }
 
@@ -210,15 +215,16 @@ fun startLocationUpdates(client: FusedLocationProviderClient, onUpdate: (Locatio
 }
 
 fun getDirection(azimuth: Float): String {
+    val degrees = (azimuth + 360) % 360
     return when {
-        azimuth >= 0 && azimuth < 22.5 -> "North"
-        azimuth >= 22.5 && azimuth < 67.5 -> "North-East"
-        azimuth >= 67.5 && azimuth < 112.5 -> "East"
-        azimuth >= 112.5 && azimuth < 157.5 -> "South-East"
-        azimuth >= 157.5 && azimuth < 202.5 -> "South"
-        azimuth >= 202.5 && azimuth < 247.5 -> "South-West"
-        azimuth >= 247.5 && azimuth < 292.5 -> "West"
-        azimuth >= 292.5 && azimuth < 337.5 -> "North-West"
+        degrees >= 0 && degrees < 22.5 -> "North"
+        degrees >= 22.5 && degrees < 67.5 -> "North-East"
+        degrees >= 67.5 && degrees < 112.5 -> "East"
+        degrees >= 112.5 && degrees < 157.5 -> "South-East"
+        degrees >= 157.5 && degrees < 202.5 -> "South"
+        degrees >= 202.5 && degrees < 247.5 -> "South-West"
+        degrees >= 247.5 && degrees < 292.5 -> "West"
+        degrees >= 292.5 && degrees < 337.5 -> "North-West"
         else -> "North"
     }
 }
